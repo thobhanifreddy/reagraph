@@ -21,6 +21,8 @@ import Graph from 'graphology';
 import { Lasso, LassoType } from './selection';
 import ThreeCameraControls from 'camera-controls';
 import css from './GraphCanvas.module.css';
+import { XRButton, XR, Controllers, Hands } from '@react-three/xr';
+import { PerspectiveCamera, Vector3 } from 'three';
 
 export interface GraphCanvasProps extends Omit<GraphSceneProps, 'theme'> {
   /**
@@ -82,13 +84,16 @@ const GL_DEFAULTS = {
   antialias: true
 };
 
-// TODO: Fix type
-const CAMERA_DEFAULTS: any = {
-  position: [0, 0, 1000],
-  near: 5,
-  far: 50000,
-  fov: 10
-};
+const fov = 60;
+
+const near = 0.1;
+
+const aspect = window.innerWidth / window.innerHeight;
+
+const far = 50000;
+
+const camera = new PerspectiveCamera(fov, aspect, near, far);
+camera.position.set(0, 0, 1500);
 
 export const GraphCanvas: FC<GraphCanvasProps & { ref?: Ref<GraphCanvasRef> }> =
   forwardRef(
@@ -140,59 +145,65 @@ export const GraphCanvas: FC<GraphCanvasProps & { ref?: Ref<GraphCanvasRef> }> =
       // Reference: https://github.com/protectwise/troika/discussions/213#discussioncomment-3086666
       return (
         <div className={css.canvas}>
+          <XRButton mode="VR" onError={error => console.log(error)} />
           <Canvas
             legacy
             linear
             flat
             gl={gl}
-            camera={CAMERA_DEFAULTS}
+            camera={camera}
             onPointerMissed={onCanvasClick}
+            vr
           >
-            <Provider
-              createStore={() =>
-                createStore({
-                  selections,
-                  actives,
-                  theme,
-                  collapsedNodeIds
-                })
-              }
-            >
-              {theme.canvas?.background && (
-                <color attach="background" args={[theme.canvas.background]} />
-              )}
-              <ambientLight intensity={1} />
-              {children}
-              {theme.canvas?.fog && (
-                <fog attach="fog" args={[theme.canvas.fog, 4000, 9000]} />
-              )}
-              <CameraControls
-                mode={cameraMode}
-                ref={controlsRef}
-                animated={animated}
-                disabled={disabled}
+            <XR>
+              <Controllers />
+              <Hands />
+              <Provider
+                createStore={() =>
+                  createStore({
+                    selections,
+                    actives,
+                    theme,
+                    collapsedNodeIds
+                  })
+                }
               >
-                <Lasso
-                  theme={theme}
+                {theme.canvas?.background && (
+                  <color attach="background" args={[theme.canvas.background]} />
+                )}
+                <ambientLight intensity={1} />
+                {children}
+                {theme.canvas?.fog && (
+                  <fog attach="fog" args={[theme.canvas.fog, 4000, 9000]} />
+                )}
+                <CameraControls
+                  mode={cameraMode}
+                  ref={controlsRef}
+                  animated={animated}
                   disabled={disabled}
-                  type={lassoType}
-                  onLasso={onLasso}
-                  onLassoEnd={onLassoEnd}
                 >
-                  <Suspense>
-                    <GraphScene
-                      ref={rendererRef as any}
-                      theme={theme}
-                      disabled={disabled}
-                      animated={finalAnimated}
-                      edges={edges}
-                      nodes={nodes}
-                      {...rest}
-                    />
-                  </Suspense>
-                </Lasso>
-              </CameraControls>
-            </Provider>
+                  <Lasso
+                    theme={theme}
+                    disabled={disabled}
+                    type={lassoType}
+                    onLasso={onLasso}
+                    onLassoEnd={onLassoEnd}
+                  >
+                    <Suspense>
+                      <GraphScene
+                        ref={rendererRef as any}
+                        theme={theme}
+                        disabled={disabled}
+                        animated={finalAnimated}
+                        edges={edges}
+                        nodes={nodes}
+                        {...rest}
+                      />
+                    </Suspense>
+                  </Lasso>
+                </CameraControls>
+              </Provider>
+            </XR>
           </Canvas>
         </div>
       );

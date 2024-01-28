@@ -55,6 +55,7 @@
     "@react-spring/three": "9.6.1",
     "@react-three/drei": "9.79.0",
     "@react-three/fiber": "8.13.5",
+    "@react-three/xr": "^5.7.1",
     "camera-controls": "^2.7.0",
     "classnames": "^2.3.1",
     "d3-array": "^3.2.4",
